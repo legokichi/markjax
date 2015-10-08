@@ -9,15 +9,14 @@
     <link rel='stylesheet' href='../thirdparty/codemirror/codemirror.css' />
     <link rel='stylesheet' href='../thirdparty/codemirror/theme/solarized.css' />
     <link rel='stylesheet' href='../thirdparty/codemirror/addon/dialog/dialog.css' />
-    <link rel='stylesheet' href='../thirdparty/github-markdown/github-markdown.css' />
     <link rel='stylesheet' href="../thirdparty/normalize/normalize.css" />
     <link rel='stylesheet' href='./index.css' />
-    <script src="../thirdparty/EventEmitter/EventEmitter.min.js"></script>
-    <script src="../thirdparty/react/dist/react.js"></script>
-    <script src="../thirdparty/react/dist/JSXTransformer.js"></script>
-    <script src="../thirdparty/jquery/jquery.min.js"></script>
-    <script src="../thirdparty/lodash/lodash.min.js"></script>
-    <script src="../thirdparty/marked/marked.min.js"></script>
+    <script src="../bower_components/eventemitter3/index.js"></script>
+    <script src="../bower_components/mithril/mithril.min.js"></script>
+    <script src="./template-converter.js"></script>
+    <script src="../bower_components/zepto/zepto.min.js"></script>
+    <script src="../bower_components/lodash/lodash.min.js"></script>
+    <script src="../bower_components/marked/marked.min.js"></script>
     <script src="../thirdparty/codemirror/codemirror.js"></script>
     <script src="../thirdparty/codemirror/addon/search/searchcursor.js"></script>
     <script src="../thirdparty/codemirror/addon/search/search.js"></script>
@@ -28,13 +27,5 @@
     <script src="./index.js"></script>
   </head>
   <body>
-    <div id="box">
-      <section id="box-editor">
-        <textarea id="box-editor-textarea" wrap='off'></textarea>
-      </section>
-      <section id="box-preview">
-        <iframe id="box-preview-iframe"></iframe>
-      </section>
-    </div>
   </body>
 </html>

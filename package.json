@@ -1,14 +1,24 @@
 {
-  "name": "mathjaxdown",
-  "version": "1.0.0",
+  "name": "markjax",
+  "version": "0.0.0",
   "description": "",
+  "url": "https://github.com/legokichi/markjax.git",
+  "keywords": [],
   "main": "index.js",
   "scripts": {
+    "watch": "coffee --watch --compile --bare --output demo src",
+    "_espower": "for i in `find output/test -name test*.js`; do node node_modules/espower-cli/bin/cmd.js $i > $i.esp.js; done",
     "start": "http-server -p 8000 &",
     "stop": "killall -- node */http-server -p 8000",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "watch": "coffee --watch --compile --bare --output demo src"
+    "update": "npm update; bower update;",
+    "init": "npm run update; npm run build"
   },
   "author": "legokichi",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+  },
+  "devDependencies": {
+    "espower-cli": ""
+  }
 }

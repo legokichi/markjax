@@ -1,36 +1,114 @@
-
-Preview = React.createClass
-  render: ->
-    JSXTransformer.exec(@props.body || "<div></div>")
-$ ->
-  iframeBody = document.getElementById("box-preview-iframe").contentDocument.body
-  comp = React.render(React.createElement(Preview, {}), iframeBody)
-  setInterval((()->
-    date = new Date
-    console.log body = """<div>
-    <span>#{date.getHours()}</span>:
-    <span>#{date.getMinutes()}</span>:
-    <span>#{date.getSeconds()}</span>
-    </div>"""
-    React.render(React.createElement(Preview, {body}), iframeBody)
-  ),1000)
-
 ## main
-###
 $ ->
-  console.log edit = new Editor($("#box-editor")[0])
-  console.log elm = React.createElement(Preview, {})
-  console.log iframe = $("#box-preview-iframe")[0].contentDocument.body
-  console.log comp = React.render(elm, iframe)
-  edit.changeMode "markdown"
-  edit.on "change", (text)->
-    console.log body = "<body>"+marked(text)+"</body>"
-    React.render(React.createElement(Preview, {body}), iframe)
+  m.mount(document.body, RootComponent)
 
-Preview = React.createClass
-  render: ->
-    JSXTransformer.exec(@props.body || "<body></body>")
-###
+RootComponent =
+  controller: (data)->
+    CodeMirrorController =
+      onchange: (cm, cmev)->
+        PreviewController.head("<link rel='stylesheet' href='../thirdparty/github-markdown/github-markdown.css' />")
+        PreviewController.body("<div class='markdown-body'>#{marked(@value())}</div>")
+      changeConfig: (key, val)->
+        config = @config()
+        config[key] = val
+        @config(config)
+      value: m.prop("")
+      config: m.prop
+        enableCodeMirror: true
+        CodeMirrorConfig:
+          mode: "markdown"
+          tabMode: "indent"
+          tabSize: 2
+          theme: 'solarized dark'
+          autoCloseTags : true
+          lineNumbers: true
+          matchBrackets: true
+          autoCloseBrackets: true
+          showCursorWhenSelecting: true
+          extraKeys:
+            "Tab": (cm)->
+              CodeMirror.commands[(
+                if cm.getSelection().length
+                then "indentMore"
+                else "insertSoftTab"
+              )](cm)
+            "Shift-Tab": "indentLess"
+    PreviewController =
+      head: m.prop("")
+      body: m.prop("")
+    {CodeMirrorController, PreviewController}
+  view: (ctrl)->
+    m("div", {id: "box"}, [
+      m("section", {id: "box-editor"}, [
+        m.component(CodeMirrorComponent, ctrl.CodeMirrorController)
+      ])
+      m("section", {id: "box-box-preview"}, [
+        m.component(PreviewComponent, ctrl.PreviewController)
+      ])
+    ])
+
+PreviewComponent =
+  controller: (attrs)-> {}
+  view: (ctrl, attrs)->
+    m("iframe", {
+      id: "box-preview-iframe",
+      config: PreviewComponent.config(attrs)
+    }, [])
+  head: null
+  body: null
+  config: (attrs)-> (elm, isInitialized, ctx, vdom)=>
+    if !isInitialized
+      m.mount(elm.contentDocument.head, {
+        view: (_ctrl, _attrs)->
+          console.log code = templateConverter.Template(attrs.head())
+          new Function("ctrl", "attrs", "return #{code}")(_ctrl, _attrs)
+      })
+      m.mount(elm.contentDocument.body, {
+        view: (_ctrl, _attrs)->
+          console.log code = templateConverter.Template(attrs.body())
+          new Function("ctrl", "attrs", "return #{code}")(_ctrl, _attrs)
+      })
+
+CodeMirrorComponent =
+  controller: (attrs)-> {}
+  view: (ctrl, attrs)->
+    m("textarea", {
+      id: "box-editor-textarea", wrap: "off",
+      config: CodeMirrorComponent.config(attrs)
+      onkeydown: -> # when textearea mode
+        m.withAttr("value", attrs.value).apply(this, arguments)
+        attrs.onchange.apply(attrs, arguments)
+    }, attrs.value())
+  cm: null
+  docs: []
+  config: (attrs)-> (elm, isInitialized, ctx, vdom)=>
+    @initCM(attrs, elm) if !isInitialized
+    if @detectChange(attrs.config())
+      {CodeMirrorConfig, enableCodeMirror} = attrs.config()
+      if enableCodeMirror
+      then @initCM(attrs, elm)
+      else @cm.toTextArea(); elm.focus()
+      @cm.setOption(key, val) for key, val of CodeMirrorConfig
+  prev: ""
+  detectChange: (obj)->
+    cur = JSON.stringify(obj)
+    if cur isnt @prev
+      @prev = cur
+      true
+    else false
+  initCM: (attrs, elm)->
+    @cm = CodeMirror.fromTextArea(elm)
+    @docs.push(@cm.doc)
+    @cm.setSize("100%", "100%")
+    @cm.on "change", (cm, cmev)->
+      m.startComputation()
+      attrs.value(cm.doc.getValue())
+      attrs.onchange() if typeof attrs.onchange is "function"
+      m.endComputation()
+
+
+
+
 
 ## marked compiler setting
 marked.setOptions
@@ -42,73 +120,3 @@ marked.setOptions
   sanitize: false
   smartLists: false
   smartypants: false
-
-
-## React Root Component Class
-class Component extends React.Component
-  _.extend Component.prototype, React.DOM
-  @element = -> React.createFactory(this).apply(this, arguments)
-
-
-
-
-
-
-###
-class Preview extends Component
-  render: ->
-    @iframe
-      ref: 'htmlWrapper'
-      html: @props.html
-  componentDidMount: -> @renderFrameContents()
-  componentDidUpdate: -> @renderFrameContents()
-  _renderFrameContents: ->
-    doc = React.findDOMNode(@).contentDocument
-    if doc.readyState is 'complete'
-      console.log "renderFrameContents", doc.readyState
-      React.render(JSXTransformer.exec("<head>#{@props.head}</head>"), doc.head) if @props.head?
-      React.render(JSXTransformer.exec("<body>#{@props.body}</body>"), doc.body) if @props.body?
-    else setTimeout(@renderFrameContents, 0)
-  renderFrameContents: ->
-    current = @props.html
-    if @_lastHtml isnt current
-      @_lastHtml = current
-      node = @refs.htmlWrapper.getDOMNode()
-      console.log node
-      node.contentDocument.body.innerHTML = current
-      #node.style.height = node.contentWindow.document.body.scrollHeight + 'px'
-      #node.style.width  = node.contentWindow.document.body.scrollWidth  + 'px'
-  componentWillUnmount: ->
-    React.unmountComponentAtNode(React.findDOMNode(@).contentDocument.head)
-    React.unmountComponentAtNode(React.findDOMNode(@).contentDocument.body)
-
-###
-
-
-class Editor extends EventEmitter
-  constructor: (@elm)->
-    EventEmitter.call(this)
-    @cm = CodeMirror.fromTextArea($(@elm).find("textarea")[0], @option)
-    @cm.setSize("100%", "100%")
-    @docs = []
-    @docs.push @cm.doc
-    @cm.on "change", => @emit "change", @cm.doc.getValue()
-  changeMode: (mode)->
-    @cm.setOption("mode", mode)
-  option:
-    tabMode: "indent"
-    tabSize: 2
-    theme: 'solarized dark'
-    autoCloseTags : true
-    lineNumbers: true
-    matchBrackets: true
-    autoCloseBrackets: true
-    showCursorWhenSelecting: true
-    extraKeys:
-      "Tab": (cm)->
-        CodeMirror.commands[(
-          if cm.getSelection().length
-          then "indentMore"
-          else "insertSoftTab"
-        )](cm)
-      "Shift-Tab": "indentLess"
