@@ -54,7 +54,9 @@ templateConverter.Template = function recurse() {
 
 			var style = ""
 			if (el.attrs.style) {
-				virtual += ", {style: " + ("{\"" + el.attrs.style.replace(/:/g, "\": \"").replace(/;/g, "\", \"") + "}").replace(/, "}|"}/, "}") + "}"
+				a = ", {style: " + ("{\"" + el.attrs.style.replace(/:/g, "\": \"").replace(/;/g, "\", \"") + "}").replace(/, "}|"}/, "}") + "}"
+				console.log(el.attrs.style, a)
+				virtual += a
 			}
 
 			if (el.children.length > 0) {
